@@ -1,0 +1,1150 @@
+====CaveSettings====
+package com.regenerationforrged.data.worldgen.preset.settings;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+public class CaveSettings {
+	public static final Codec<CaveSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+		Codec.FLOAT.fieldOf("entranceCaveProbability").forGetter((o) -> o.entranceCaveProbability),
+		Codec.FLOAT.fieldOf("cheeseCaveDepthOffset").forGetter((o) -> o.cheeseCaveDepthOffset),
+		Codec.FLOAT.fieldOf("cheeseCaveProbability").forGetter((o) -> o.cheeseCaveProbability),
+		Codec.FLOAT.fieldOf("spaghettiCaveProbability").forGetter((o) -> o.spaghettiCaveProbability),
+		Codec.FLOAT.fieldOf("noodleCaveProbability").forGetter((o) -> o.noodleCaveProbability),
+		Codec.FLOAT.fieldOf("caveCarverProbability").forGetter((o) -> o.caveCarverProbability),
+		Codec.FLOAT.fieldOf("deepCaveCarverProbability").forGetter((o) -> o.deepCaveCarverProbability),
+		Codec.FLOAT.fieldOf("ravineCarverProbability").forGetter((o) -> o.ravineCarverProbability),
+		Codec.BOOL.fieldOf("largeOreVeins").forGetter((o) -> o.largeOreVeins),
+		Codec.BOOL.fieldOf("legacyCarverDistribution").forGetter((o) -> o.legacyCarverDistribution)
+	).apply(instance, CaveSettings::new));
+
+	public float entranceCaveProbability;
+	public float cheeseCaveDepthOffset;
+	public float cheeseCaveProbability;
+	public float spaghettiCaveProbability;
+	public float noodleCaveProbability;
+	public float caveCarverProbability;
+	public float deepCaveCarverProbability;
+	public float ravineCarverProbability;
+	public boolean largeOreVeins;
+	public boolean legacyCarverDistribution;
+	
+	//TODO
+	public boolean minCaveBiomeDepth;
+
+	public CaveSettings(float entranceCaveProbability, float cheeseCaveDepthOffset, float cheeseCaveProbability, float spaghettiCaveProbability, float noodleCaveProbability, float caveCarverProbability, float deepCaveCarverProbability, float ravineProbability, boolean largeOreVeins, boolean legacyCarverDistribution) {
+		this.entranceCaveProbability = entranceCaveProbability;
+		this.cheeseCaveDepthOffset = cheeseCaveDepthOffset;
+		this.cheeseCaveProbability = cheeseCaveProbability;
+		this.spaghettiCaveProbability = spaghettiCaveProbability;
+		this.noodleCaveProbability = noodleCaveProbability;
+		this.caveCarverProbability = caveCarverProbability;
+		this.deepCaveCarverProbability = deepCaveCarverProbability;
+		this.ravineCarverProbability = ravineProbability;
+		this.largeOreVeins = largeOreVeins;
+		this.legacyCarverDistribution = legacyCarverDistribution;
+	}
+	
+	public CaveSettings copy() {
+		return new CaveSettings(this.entranceCaveProbability, this.cheeseCaveDepthOffset, this.cheeseCaveProbability, this.spaghettiCaveProbability, this.noodleCaveProbability, this.caveCarverProbability, this.deepCaveCarverProbability, this.ravineCarverProbability, this.largeOreVeins, this.legacyCarverDistribution);
+	}
+}
+
+====ClimateSettings====
+package com.regenerationforrged.data.worldgen.preset;
+
+import java.util.function.BiFunction;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+import net.minecraft.util.StringRepresentable;
+import com.regenerationforrged.world.worldgen.noise.NoiseUtil;
+import com.regenerationforrged.world.worldgen.noise.module.Noise;
+import com.regenerationforrged.world.worldgen.noise.module.Noises;
+
+public class ClimateSettings {
+	public static final Codec<ClimateSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+		RangeValue.CODEC.fieldOf("temperature").forGetter((o) -> o.temperature),
+		RangeValue.CODEC.fieldOf("moisture").forGetter((o) -> o.moisture),
+		BiomeShape.CODEC.fieldOf("biomeShape").forGetter((o) -> o.biomeShape),
+		BiomeNoise.CODEC.fieldOf("biomeEdgeShape").forGetter((o) -> o.biomeEdgeShape)
+	).apply(instance, ClimateSettings::new));
+	
+	public RangeValue temperature;
+    public RangeValue moisture;
+    public BiomeShape biomeShape;
+    public BiomeNoise biomeEdgeShape;
+    
+    public ClimateSettings(RangeValue temperature, RangeValue moisture, BiomeShape biomeShape, BiomeNoise biomeEdgeShape) {
+    	this.temperature = temperature;
+    	this.moisture = moisture;
+    	this.biomeShape = biomeShape;
+    	this.biomeEdgeShape = biomeEdgeShape;
+    }
+    
+    public ClimateSettings copy() {
+    	return new ClimateSettings(this.temperature.copy(), this.moisture.copy(), this.biomeShape.copy(), this.biomeEdgeShape.copy());
+    }
+    
+    public static class RangeValue {
+    	public static final Codec<RangeValue> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    		Codec.INT.fieldOf("seedOffset").forGetter((o) -> o.seedOffset),
+    		Codec.INT.fieldOf("scale").forGetter((o) -> o.scale),
+    		Codec.INT.fieldOf("falloff").forGetter((o) -> o.falloff),
+    		Codec.FLOAT.fieldOf("min").forGetter((o) -> o.min),
+    		Codec.FLOAT.fieldOf("max").forGetter((o) -> o.max),
+    		Codec.FLOAT.fieldOf("bias").forGetter((o) -> o.bias)
+    	).apply(instance, RangeValue::new));
+    	
+        public int seedOffset;
+        public int scale;
+        public int falloff;
+        public float min;
+        public float max;
+        public float bias;
+        
+        public RangeValue(int seedOffset, int scale, int falloff, float min, float max, float bias) {
+            this.seedOffset = seedOffset;
+            this.min = min;
+            this.max = max;
+            this.bias = bias;
+            this.scale = scale;
+            this.falloff = falloff;
+        }
+        
+        public float getMin() {
+            return NoiseUtil.clamp(Math.min(this.min, this.max), 0.0F, 1.0F);
+        }
+        
+        public float getMax() {
+            return NoiseUtil.clamp(Math.max(this.min, this.max), this.getMin(), 1.0F);
+        }
+        
+        public float getBias() {
+            return NoiseUtil.clamp(this.bias, -1.0F, 1.0F);
+        }
+        
+        public Noise apply(Noise module) {
+            float min = this.getMin();
+            float max = this.getMax();
+            float bias = this.getBias() / 2.0F;
+            module = Noises.add(module, bias);
+            module = Noises.clamp(module, min, max);
+            return module;
+        }
+        
+        public RangeValue copy() {
+        	return new RangeValue(this.seedOffset, this.scale, this.falloff, this.min, this.max, this.bias);
+        }
+    }
+    
+    public static class BiomeShape {
+    	public static final Codec<BiomeShape> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    		Codec.INT.fieldOf("biomeSize").forGetter((o) -> o.biomeSize),
+    		Codec.INT.fieldOf("macroNoiseSize").forGetter((o) -> o.macroNoiseSize),
+    		Codec.INT.fieldOf("biomeWarpScale").forGetter((o) -> o.biomeWarpScale),
+    		Codec.INT.fieldOf("biomeWarpStrength").forGetter((o) -> o.biomeWarpStrength)    		
+    	).apply(instance, BiomeShape::new));
+    	
+        public int biomeSize;
+        public int macroNoiseSize;
+        public int biomeWarpScale;
+        public int biomeWarpStrength;
+        
+        public BiomeShape(int biomeSize, int macroNoiseSize, int biomeWarpScale, int biomeWarpStrength) {
+        	this.biomeSize = biomeSize;
+        	this.macroNoiseSize = macroNoiseSize;
+        	this.biomeWarpScale = biomeWarpScale;
+        	this.biomeWarpStrength = biomeWarpStrength;
+        }
+        
+        public BiomeShape copy() {
+        	return new BiomeShape(this.biomeSize, this.macroNoiseSize, this.biomeWarpScale, this.biomeWarpStrength);
+        }
+    }
+    
+    public static class BiomeNoise {
+    	public static final Codec<BiomeNoise> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    		EdgeType.CODEC.fieldOf("type").forGetter((o) -> o.type),
+    		Codec.INT.fieldOf("scale").forGetter((o) -> o.scale),
+    		Codec.INT.fieldOf("octaves").forGetter((o) -> o.octaves),
+    		Codec.FLOAT.fieldOf("gain").forGetter((o) -> o.gain),
+    		Codec.FLOAT.fieldOf("lacunarity").forGetter((o) -> o.lacunarity),
+    		Codec.INT.fieldOf("strength").forGetter((o) -> o.strength)
+    	).apply(instance, BiomeNoise::new));
+    	
+        public EdgeType type;
+        public int scale;
+        public int octaves;
+        public float gain;
+        public float lacunarity;
+        public int strength;
+
+        public BiomeNoise(EdgeType type, int scale, int octaves, float gain, float lacunarity, int strength) {
+            this.type = type;
+            this.scale = scale;
+            this.octaves = octaves;
+            this.gain = gain;
+            this.lacunarity = lacunarity;
+            this.strength = strength;
+        }
+        
+        public Noise build(int seed) {
+            return Noises.add(this.type.factory.apply(seed, this), Noises.constant(-0.5F));
+        }
+        
+        public BiomeNoise copy() {
+        	return new BiomeNoise(this.type, this.scale, this.octaves, this.gain, this.lacunarity, this.strength);
+        }
+        
+        public enum EdgeType implements StringRepresentable {
+        	BILLOW("BILLOW", (seed, settings) -> Noises.billow(seed, settings.scale, settings.octaves, settings.lacunarity, settings.gain)),
+        	VORONOI("CELL", (seed, settings) -> Noises.worley(seed, settings.scale)),
+        	VORONOI_EDGE("CELL_EDGE", (seed, settings) -> Noises.worleyEdge(seed, settings.scale)),
+        	CONSTANT("CONST", (seed, settings) -> Noises.one()),
+        	CUBIC("CUBIC", (seed, settings) -> Noises.cubic(seed, settings.scale, settings.octaves, settings.lacunarity, settings.gain)),
+        	PERLIN("PERLIN", (seed, settings) -> Noises.perlin(seed, settings.scale, settings.octaves, settings.lacunarity, settings.gain)),
+        	PERLIN2("PERLIN2", (seed, settings) -> Noises.perlin2(seed, settings.scale, settings.octaves, settings.lacunarity, settings.gain)),
+        	PERLIN_RIDGE("RIDGE", (seed, settings) -> Noises.perlinRidge(seed, settings.scale, settings.octaves, settings.lacunarity, settings.gain)),
+        	SIMPLEX("SIMPLEX", (seed, settings) -> Noises.simplex(seed, settings.scale, settings.octaves, settings.lacunarity, settings.gain)),
+        	SIMPLEX2("SIMPLEX2", (seed, settings) -> Noises.simplex2(seed, settings.scale, settings.octaves, settings.lacunarity, settings.gain)),
+        	
+        	// calling simplex2 isn't a mistake, this is for backwards compatibility
+        	SIMPLEX_RIDGE("SIMPLEX_RIDGE", (seed, settings) -> Noises.simplex2(seed, settings.scale, settings.octaves, settings.lacunarity, settings.gain)),
+        	SIN("SIN", (seed, settings) -> Noises.sin(seed, 1.0F, Noises.zero())),
+        	WHITE("RAND", (seed, settings) -> Noises.white(seed, 1));
+
+        	public static final Codec<EdgeType> CODEC = StringRepresentable.fromEnum(EdgeType::values);
+        	
+        	private String name;
+        	private BiFunction<Integer, BiomeNoise, Noise> factory;
+        	
+        	private EdgeType(String name, BiFunction<Integer, BiomeNoise, Noise> factory) {
+        		this.name = name;
+        		this.factory = factory;
+        	}
+
+			@Override
+			public String getSerializedName() {
+				return this.name;
+			}
+        	
+        	public Noise build(int seed, BiomeNoise settings) {
+        		return this.factory.apply(seed, settings);
+        	}
+        }
+    }
+}
+
+====FilterSettings====
+package com.regenerationforrged.data.worldgen.preset;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+public class FilterSettings {
+	public static final Codec<FilterSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+		Erosion.CODEC.fieldOf("erosion").forGetter((o) -> o.erosion),
+		Smoothing.CODEC.fieldOf("smoothing").forGetter((o) -> o.smoothing)
+	).apply(instance, FilterSettings::new));
+	
+    public Erosion erosion;
+    public Smoothing smoothing;
+    
+    public FilterSettings(Erosion erosion, Smoothing smoothing) {
+    	this.erosion = erosion;
+    	this.smoothing = smoothing;
+    }
+    
+    public FilterSettings copy() {
+    	return new FilterSettings(this.erosion.copy(), this.smoothing.copy());
+    }
+    
+    public static class Erosion {
+    	public static final Codec<Erosion> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    		Codec.INT.fieldOf("dropletsPerChunk").forGetter((o) -> o.dropletsPerChunk),
+    		Codec.INT.fieldOf("dropletLifetime").forGetter((o) -> o.dropletLifetime),
+    		Codec.FLOAT.fieldOf("dropletVolume").forGetter((o) -> o.dropletVolume),
+    		Codec.FLOAT.fieldOf("dropletVelocity").forGetter((o) -> o.dropletVelocity),
+    		Codec.FLOAT.fieldOf("erosionRate").forGetter((o) -> o.erosionRate),
+    		Codec.FLOAT.fieldOf("depositeRate").forGetter((o) -> o.depositeRate)
+    	).apply(instance, Erosion::new));
+    	
+    	public int dropletsPerChunk;
+        public int dropletLifetime;
+        public float dropletVolume;
+        public float dropletVelocity;
+        public float erosionRate;
+        public float depositeRate;
+        
+        public Erosion(int dropletsPerChunk, int dropletsLifetime, float dropletVolume, float dropletVelocity, float erosionRate, float depositeRate) {
+        	this.dropletsPerChunk = dropletsPerChunk;
+        	this.dropletLifetime = dropletsLifetime;
+        	this.dropletVolume = dropletVolume;
+        	this.dropletVelocity = dropletVelocity;
+        	this.erosionRate = erosionRate;
+        	this.depositeRate = depositeRate;
+        }
+        
+        public Erosion copy() {
+        	return new Erosion(this.dropletsPerChunk, this.dropletLifetime, this.dropletVolume, this.dropletVelocity, this.erosionRate, this.depositeRate);
+        }
+    }
+    
+    public static class Smoothing {
+    	public static final Codec<Smoothing> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    		Codec.INT.fieldOf("iterations").forGetter((o) -> o.iterations),
+    		Codec.FLOAT.fieldOf("smoothingRadius").forGetter((o) -> o.smoothingRadius),
+    		Codec.FLOAT.fieldOf("smoothingRate").forGetter((o) -> o.smoothingRate)    		
+    	).apply(instance, Smoothing::new));
+    	
+        public int iterations;
+        public float smoothingRadius;
+        public float smoothingRate;
+        
+        public Smoothing(int iterations, float smoothingRadius, float smoothingRate) {
+        	this.iterations = iterations;
+        	this.smoothingRadius = smoothingRadius;
+        	this.smoothingRate = smoothingRate;
+        }
+        
+        public Smoothing copy() {
+        	return new Smoothing(this.iterations, this.smoothingRadius, this.smoothingRate);
+        }
+    }
+}
+
+====ContinentType====
+package com.regenerationforrged.data.worldgen.preset;
+
+import com.mojang.serialization.Codec;
+
+import net.minecraft.util.StringRepresentable;
+import com.regenerationforrged.world.worldgen.GeneratorContext;
+import com.regenerationforrged.world.worldgen.cell.continent.Continent;
+import com.regenerationforrged.world.worldgen.cell.continent.advanced.AdvancedContinentGenerator;
+import com.regenerationforrged.world.worldgen.cell.continent.fancy.FancyContinentGenerator;
+import com.regenerationforrged.world.worldgen.cell.continent.infinite.InfiniteContinentGenerator;
+import com.regenerationforrged.world.worldgen.cell.continent.simple.MultiContinentGenerator;
+import com.regenerationforrged.world.worldgen.cell.continent.simple.SingleContinentGenerator;
+import com.regenerationforrged.world.worldgen.util.Seed;
+
+public enum ContinentType implements StringRepresentable {
+    MULTI {
+        
+    	@Override
+        public MultiContinentGenerator create(Seed seed, GeneratorContext context) {
+            return new MultiContinentGenerator(seed, context);
+        }
+    }, 
+    SINGLE {
+        
+    	@Override
+        public SingleContinentGenerator create(Seed seed, GeneratorContext context) {
+            return new SingleContinentGenerator(seed, context);
+        }
+    }, 
+    MULTI_IMPROVED {
+        
+    	@Override
+        public AdvancedContinentGenerator create(Seed seed, GeneratorContext context) {
+            return new AdvancedContinentGenerator(seed, context);
+        }
+    }, 
+    EXPERIMENTAL {
+        
+    	@Override
+        public FancyContinentGenerator create(Seed seed, GeneratorContext context) {
+            return new FancyContinentGenerator(seed, context);
+        }
+    },
+    INFINITE {
+        
+    	@Override
+        public InfiniteContinentGenerator create(Seed seed, GeneratorContext context) {
+            return new InfiniteContinentGenerator(context);
+        }
+    };
+	
+	public static final Codec<ContinentType> CODEC = StringRepresentable.fromEnum(ContinentType::values);
+    
+    public abstract Continent create(Seed seed, GeneratorContext context);
+
+    @Override
+	public String getSerializedName() {
+		return this.name();
+	}
+}
+
+====MiscellaneousSettings====
+package com.regenerationforrged.data.worldgen.preset;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+public class MiscellaneousSettings {
+	public static final Codec<MiscellaneousSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+		Codec.BOOL.fieldOf("smoothLayerDecorator").forGetter((s) -> s.smoothLayerDecorator),
+		Codec.INT.fieldOf("strataRegionSize").forGetter((s) -> s.strataRegionSize),
+		Codec.BOOL.fieldOf("strataDecorator").forGetter((s) -> s.strataDecorator),
+		Codec.BOOL.fieldOf("oreCompatibleStoneOnly").forGetter((s) -> s.oreCompatibleStoneOnly),
+		Codec.BOOL.fieldOf("erosionDecorator").forGetter((s) -> s.erosionDecorator),
+		Codec.BOOL.fieldOf("plainStoneErosion").forGetter((s) -> s.plainStoneErosion),
+		Codec.BOOL.fieldOf("naturalSnowDecorator").forGetter((s) -> s.naturalSnowDecorator),
+		Codec.BOOL.fieldOf("customBiomeFeatures").forGetter((s) -> s.customBiomeFeatures),
+		Codec.BOOL.fieldOf("vanillaSprings").forGetter((s) -> s.vanillaSprings),
+		Codec.BOOL.fieldOf("vanillaLavaLakes").forGetter((s) -> s.vanillaLavaLakes),
+		Codec.BOOL.fieldOf("vanillaLavaSprings").forGetter((s) -> s.vanillaLavaSprings),
+		Codec.FLOAT.fieldOf("mountainBiomeUsage").forGetter((s) -> s.mountainBiomeUsage),
+		Codec.FLOAT.fieldOf("volcanoBiomeUsage").forGetter((s) -> s.volcanoBiomeUsage)
+	).apply(instance, MiscellaneousSettings::new));
+	
+	public boolean smoothLayerDecorator;
+	public int strataRegionSize;
+	public boolean strataDecorator;
+	public boolean oreCompatibleStoneOnly;
+	public boolean erosionDecorator;
+	public boolean plainStoneErosion;
+	public boolean naturalSnowDecorator;
+	public boolean customBiomeFeatures;
+	public boolean vanillaSprings;
+	public boolean vanillaLavaLakes;
+	public boolean vanillaLavaSprings;
+    public float mountainBiomeUsage;
+    public float volcanoBiomeUsage;
+	
+	public MiscellaneousSettings(
+		boolean smoothLayerDecorator,
+		int strataRegionSize,
+		boolean strataDecorator,
+		boolean oreCompatibleStoneOnly,
+		boolean erosionDecorator,
+		boolean plainStoneErosion,
+		boolean naturalSnowDecorator,
+		boolean customBiomeFeatures,
+		boolean vanillaSprings,
+		boolean vanillaLavaLakes,
+		boolean vanillaLavaSprings,
+	    float mountainBiomeUsage,
+	    float volcanoBiomeUsage
+	) {
+		this.smoothLayerDecorator = smoothLayerDecorator;
+		this.strataRegionSize = strataRegionSize;
+		this.strataDecorator = strataDecorator;
+		this.oreCompatibleStoneOnly = oreCompatibleStoneOnly;
+		this.erosionDecorator = erosionDecorator;
+		this.plainStoneErosion = plainStoneErosion;
+		this.naturalSnowDecorator = naturalSnowDecorator;
+		this.customBiomeFeatures = customBiomeFeatures;
+		this.vanillaSprings = vanillaSprings;
+		this.vanillaLavaLakes = vanillaLavaLakes;
+		this.vanillaLavaSprings = vanillaLavaSprings;
+		this.mountainBiomeUsage = mountainBiomeUsage;
+		this.volcanoBiomeUsage = volcanoBiomeUsage;
+	}
+	
+	public MiscellaneousSettings copy() {
+		return new MiscellaneousSettings(this.smoothLayerDecorator, this.strataRegionSize, this.strataDecorator, this.oreCompatibleStoneOnly, this.erosionDecorator, this.plainStoneErosion, this.naturalSnowDecorator, this.customBiomeFeatures, this.vanillaSprings, this.vanillaLavaLakes, this.vanillaLavaSprings, this.mountainBiomeUsage, this.volcanoBiomeUsage);
+	}
+}
+
+====Preset====
+package com.regenerationforrged.data.worldgen.preset;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.RegistrySetBuilder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.resources.ResourceKey;
+import com.regenerationforrged.data.worldgen.BiomeModifierData;
+import com.regenerationforrged.data.worldgen.NoiseData;
+import com.regenerationforrged.data.worldgen.RGFBiomeData;
+import com.regenerationforrged.data.worldgen.RGFConfiguredCarvers;
+import com.regenerationforrged.data.worldgen.RGFConfiguredFeatures;
+import com.regenerationforrged.data.worldgen.RGFDimensionTypes;
+import com.regenerationforrged.data.worldgen.RGFNoiseGeneratorSettings;
+import com.regenerationforrged.data.worldgen.RGFNoiseRouterData;
+import com.regenerationforrged.data.worldgen.RGPlacedFeatures;
+import com.regenerationforrged.data.worldgen.StructureRuleData;
+import com.regenerationforged.registries.RGFRegistries;
+
+public record Preset(WorldSettings world, CaveSettings caves, ClimateSettings climate, TerrainSettings terrain, RiverSettings rivers, FilterSettings filters, StructureSettings structures, MiscellaneousSettings miscellaneous) {
+	public static final Codec<Preset> DIRECT_CODEC = RecordCodecBuilder.create(instance -> instance.group(
+		WorldSettings.CODEC.fieldOf("world").forGetter(Preset::world),
+		CaveSettings.CODEC.optionalFieldOf("caves", new CaveSettings(0.0F, 1.5625F, 1.0F, 1.0F, 1.0F, 0.14285715F, 0.07F, 0.02F, true, false)).forGetter((o) -> o.caves),
+		ClimateSettings.CODEC.fieldOf("climate").forGetter(Preset::climate),
+		TerrainSettings.CODEC.fieldOf("terrain").forGetter(Preset::terrain),
+		RiverSettings.CODEC.fieldOf("rivers").forGetter(Preset::rivers),
+		FilterSettings.CODEC.fieldOf("filters").forGetter(Preset::filters),
+		StructureSettings.CODEC.fieldOf("structures").forGetter(Preset::structures),
+		MiscellaneousSettings.CODEC.fieldOf("miscellaneous").forGetter(Preset::miscellaneous)
+	).apply(instance, Preset::new));
+	
+	@Deprecated
+	public static final ResourceKey<Preset> KEY = RTFRegistries.createKey(RTFRegistries.PRESET, "preset");
+	
+	public Preset copy() {
+		return new Preset(this.world.copy(), this.caves.copy(), this.climate.copy(), this.terrain.copy(), this.rivers.copy(), this.filters.copy(), this.structures.copy(), this.miscellaneous.copy());
+	}
+
+	public HolderLookup.Provider buildPatch(RegistryAccess registries) {
+		RegistrySetBuilder builder = new RegistrySetBuilder();
+		this.addPatch(builder, RTFRegistries.PRESET, (preset, ctx) -> ctx.register(KEY, preset));
+		this.addPatch(builder, RTFRegistries.NOISE, NoiseData::bootstrap);
+		this.addPatch(builder, RTFRegistries.BIOME_MODIFIER, BiomeModifierData::bootstrap);
+		this.addPatch(builder, RTFRegistries.STRUCTURE_RULE, StructureRuleData::bootstrap);
+		this.addPatch(builder, Registries.CONFIGURED_FEATURE, (preset, ctx) -> {
+			RTFConfiguredFeatures.bootstrap(preset, ctx);
+		});
+		this.addPatch(builder, Registries.CONFIGURED_CARVER, (preset, ctx) -> {
+			RTFConfiguredCarvers.bootstrap(preset, ctx);	
+		});
+		this.addPatch(builder, Registries.PLACED_FEATURE, RTFPlacedFeatures::bootstrap);
+		this.addPatch(builder, Registries.BIOME, RTFBiomeData::bootstrap);
+		this.addPatch(builder, Registries.DIMENSION_TYPE, RTFDimensionTypes::bootstrap);
+		this.addPatch(builder, Registries.DENSITY_FUNCTION, RTFNoiseRouterData::bootstrap);
+		this.addPatch(builder, Registries.NOISE_SETTINGS, RTFNoiseGeneratorSettings::bootstrap);
+		return builder.buildPatch(RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY), registries);
+	}
+	
+	private <T> void addPatch(RegistrySetBuilder builder, ResourceKey<? extends Registry<T>> key, Patch<T> patch) {
+    	builder.add(key, (ctx) -> {
+    		patch.apply(this, ctx);
+    	});
+    }
+    
+	private interface Patch<T> {
+        void apply(Preset preset, BootstapContext<T> ctx);
+	}
+}
+
+====PresetBiomeData====
+package com.regenerationforrged.data.worldgen.preset;
+
+import net.minecraft.core.HolderGetter;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
+import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import com.regenerationforrged.RegenerationForrged;
+import com.regenerationforrged.data.worldgen.preset.settings.MiscellaneousSettings;
+import com.regenerationforrged.data.worldgen.preset.settings.Preset;
+import com.regenerationforrged.world.worldgen.biome.RTFBiomes;
+
+public final class PresetBiomeData {
+    public static final ResourceKey<Biome> BRYCE = createKey("bryce");
+    public static final ResourceKey<Biome> COLD_STEPPE = createKey("cold_steppe");
+    public static final ResourceKey<Biome> COLD_MARSHLAND = createKey("cold_marshland");
+    public static final ResourceKey<Biome> FIR_FOREST = createKey("fir_forest");
+    public static final ResourceKey<Biome> FLOWER_PLAINS = createKey("flower_plains");
+    public static final ResourceKey<Biome> FROZEN_LAKE = createKey("frozen_lake");
+    public static final ResourceKey<Biome> FROZEN_MARSH = createKey("frozen_marsh");
+    public static final ResourceKey<Biome> LAKE = createKey("lake");
+    public static final ResourceKey<Biome> MARSHLAND = createKey("marshland");
+    public static final ResourceKey<Biome> SAVANNA_SCRUB = createKey("savanna_scrub");
+    public static final ResourceKey<Biome> SHATTERED_SAVANNA_SCRUB = createKey("shattered_savanna_scrub");
+    public static final ResourceKey<Biome> SNOWY_FIR_FOREST = createKey("snowy_fir_forest");
+    public static final ResourceKey<Biome> SNOWY_TAIGA_SCRUB = createKey("snowy_taiga_scrub");
+    public static final ResourceKey<Biome> STEPPE = createKey("steppe");
+    public static final ResourceKey<Biome> STONE_FOREST = createKey("stone_forest");
+    public static final ResourceKey<Biome> TAIGA_SCRUB = createKey("taiga_scrub");
+    public static final ResourceKey<Biome> WARM_BEACH = createKey("warm_beach");
+	
+	public static void bootstrap(Preset preset, BootstapContext<Biome> ctx) {
+		MiscellaneousSettings miscellaneousSettings = preset.miscellaneous();
+		
+		if(miscellaneousSettings.customBiomeFeatures) {
+			HolderGetter<PlacedFeature> placedFeatures = ctx.lookup(Registries.PLACED_FEATURE);
+			HolderGetter<ConfiguredWorldCarver<?>> configuredWorldCarvers = ctx.lookup(Registries.CONFIGURED_CARVER);
+
+		}
+	}
+	
+    private static ResourceKey<Biome> createKey(String string) {
+        return ResourceKey.create(Registries.BIOME, RTFCommon.location(string));
+    }
+}
+
+====RiverSettings====
+package com.regenerationforrged.data.worldgen.preset;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+public class RiverSettings {
+	public static final Codec<RiverSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+		Codec.INT.fieldOf("seedOffset").forGetter((o) -> o.seedOffset),
+		Codec.INT.fieldOf("riverCount").forGetter((o) -> o.riverCount),
+		River.CODEC.fieldOf("mainRivers").forGetter((o) -> o.mainRivers),
+		River.CODEC.fieldOf("branchRivers").forGetter((o) -> o.branchRivers),
+		Lake.CODEC.fieldOf("lakes").forGetter((o) -> o.lakes),
+		Wetland.CODEC.fieldOf("wetlands").forGetter((o) -> o.wetlands)
+	).apply(instance, RiverSettings::new));
+	
+    public int seedOffset;
+    public int riverCount;
+    public River mainRivers;
+    public River branchRivers;
+    public Lake lakes;
+    public Wetland wetlands;
+    
+    public RiverSettings(int seedOffset, int riverCount, River mainRivers, River branchRivers, Lake lakes, Wetland wetlands) {
+        this.seedOffset = seedOffset;
+        this.riverCount = riverCount;
+        this.mainRivers = mainRivers;
+        this.branchRivers = branchRivers;
+        this.lakes = lakes;
+        this.wetlands = wetlands;
+    }
+    
+    public RiverSettings copy() {
+    	return new RiverSettings(this.seedOffset, this.riverCount, this.mainRivers.copy(), this.branchRivers.copy(), this.lakes.copy(), this.wetlands.copy());
+    }
+
+    public static class River {
+    	public static final Codec<River> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    		Codec.INT.fieldOf("bedDepth").forGetter((o) -> o.bedDepth),
+    		Codec.INT.fieldOf("minBankHeight").forGetter((o) -> o.minBankHeight),
+    		Codec.INT.fieldOf("maxBankHeight").forGetter((o) -> o.maxBankHeight),
+    		Codec.INT.fieldOf("bankWidth").forGetter((o) -> o.bankWidth),
+    		Codec.INT.fieldOf("bedWidth").forGetter((o) -> o.bedWidth),
+    		Codec.FLOAT.fieldOf("fade").forGetter((o) -> o.fade)
+    	).apply(instance, River::new));
+    	
+        public int bedDepth;
+        public int minBankHeight;
+        public int maxBankHeight;
+        public int bedWidth;
+        public int bankWidth;
+        public float fade;
+        
+        public River(int bedDepth, int minBankHeight, int maxBankHeight, int bankWidth, int bedWidth, float fade) {
+            this.bedDepth = bedDepth;
+            this.minBankHeight = minBankHeight;
+            this.maxBankHeight = maxBankHeight;
+            this.bankWidth = bankWidth;
+            this.bedWidth = bedWidth;
+            this.fade = fade;
+        }
+        
+        public River copy() {
+        	return new River(this.bedDepth, this.minBankHeight, this.maxBankHeight, this.bankWidth, this.bedWidth, this.fade);
+        }
+    }
+    
+    public static class Lake {
+    	public static final Codec<Lake> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    		Codec.FLOAT.fieldOf("chance").forGetter((o) -> o.chance),
+    		Codec.FLOAT.fieldOf("minStartDistance").forGetter((o) -> o.minStartDistance),
+    		Codec.FLOAT.fieldOf("maxStartDistance").forGetter((o) -> o.maxStartDistance),
+    		Codec.INT.fieldOf("depth").forGetter((o) -> o.depth),
+    		Codec.INT.fieldOf("sizeMin").forGetter((o) -> o.sizeMin),
+    		Codec.INT.fieldOf("sizeMax").forGetter((o) -> o.sizeMax),
+    		Codec.INT.fieldOf("minBankHeight").forGetter((o) -> o.minBankHeight),
+    		Codec.INT.fieldOf("maxBankHeight").forGetter((o) -> o.maxBankHeight)
+    	).apply(instance, Lake::new));
+
+        public float chance;
+        public float minStartDistance;
+        public float maxStartDistance;
+        public int depth;
+        public int sizeMin;
+        public int sizeMax;
+        public int minBankHeight;
+        public int maxBankHeight;
+        
+        public Lake(float chance, float minStartDistance, float maxStartDistance, int depth, int sizeMin, int sizeMax, int minBankHeight, int maxBankHeight) {
+        	this.chance = chance;
+        	this.minStartDistance = minStartDistance;
+        	this.maxStartDistance = maxStartDistance;
+        	this.depth = depth;
+        	this.sizeMin= sizeMin;
+        	this.sizeMax = sizeMax;
+        	this.minBankHeight = minBankHeight;
+        	this.maxBankHeight = maxBankHeight;
+        }
+        
+        public Lake copy() {
+        	return new Lake(this.chance, this.minStartDistance, this.maxStartDistance, this.depth, this.sizeMin, this.sizeMax, this.minBankHeight, this.maxBankHeight);
+        }
+    }
+    
+    public static class Wetland {
+    	public static final Codec<Wetland> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    		Codec.FLOAT.fieldOf("chance").forGetter((o) -> o.chance),
+    		Codec.INT.fieldOf("sizeMin").forGetter((o) -> o.sizeMin),
+    		Codec.INT.fieldOf("sizeMax").forGetter((o) -> o.sizeMax)
+    	).apply(instance, Wetland::new));
+    	
+        public float chance;
+        public int sizeMin;
+        public int sizeMax;
+        
+        public Wetland(float chance, int sizeMin, int sizeMax) {
+        	this.chance = chance;
+        	this.sizeMin = sizeMin;
+        	this.sizeMax = sizeMax;
+        }
+        
+        public Wetland copy() {
+        	return new Wetland(this.chance, this.sizeMin, this.sizeMax);
+        }
+    }
+}
+
+====StructureSettings====
+package com.regenerationforrged.data.worldgen.preset.settings;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import com.google.common.collect.ImmutableMap;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.levelgen.structure.StructureSet;
+
+public class StructureSettings {
+	public static final Codec<StructureSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+		Codec.unboundedMap(ResourceKey.codec(Registries.STRUCTURE_SET), StructureSetEntry.CODEC).fieldOf("structures").forGetter((s) -> s.entries)
+	).apply(instance, StructureSettings::new));
+	
+	public Map<ResourceKey<StructureSet>, StructureSetEntry> entries;
+	
+	public StructureSettings(Map<ResourceKey<StructureSet>, StructureSetEntry> entries) {
+		this.entries = new HashMap<>(entries);
+	}
+	
+	public StructureSettings() {
+		this(ImmutableMap.of());
+	}
+	
+	public StructureSettings copy() {
+		Map<ResourceKey<StructureSet>, StructureSetEntry> entries = new HashMap<>();
+		for(Entry<ResourceKey<StructureSet>, StructureSetEntry> entry : this.entries.entrySet()) {
+			entries.put(entry.getKey(), entry.getValue().copy());
+		}
+		return new StructureSettings(entries);
+	}
+	
+	public static class StructureSetEntry {
+		public static final Codec<StructureSetEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+			Codec.INT.fieldOf("spacing").forGetter((s) -> s.spacing),
+			Codec.INT.fieldOf("separation").forGetter((s) -> s.separation),
+			Codec.INT.fieldOf("salt").forGetter((s) -> s.salt),
+			Codec.BOOL.fieldOf("disabled").forGetter((s) -> s.disabled)
+		).apply(instance, StructureSetEntry::new));
+		
+		public int spacing;
+		public int separation;
+		public int salt;
+		public boolean disabled;
+		
+		public StructureSetEntry(int spacing, int separation, int salt, boolean disabled) {
+			this.spacing = spacing;
+			this.separation = separation;
+			this.salt = salt;
+			this.disabled = disabled;
+		}
+		
+		public StructureSetEntry copy() {
+			return new StructureSetEntry(this.spacing, this.separation, this.salt, this.disabled);
+		}
+	}
+}
+
+====TerianSettings====
+package com.regenerationforrged.data.worldgen.preset.settings;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+public class TerrainSettings {
+	public static final Codec<TerrainSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+		General.CODEC.fieldOf("general").forGetter((o) -> o.general),
+		Terrain.CODEC.fieldOf("steppe").forGetter((o) -> o.steppe),
+		Terrain.CODEC.fieldOf("plains").forGetter((o) -> o.plains),
+		Terrain.CODEC.fieldOf("hills").forGetter((o) -> o.hills),
+		Terrain.CODEC.fieldOf("dales").forGetter((o) -> o.dales),
+		Terrain.CODEC.fieldOf("plateau").forGetter((o) -> o.plateau),
+		Terrain.CODEC.fieldOf("badlands").forGetter((o) -> o.badlands),
+		Terrain.CODEC.fieldOf("torridonian").forGetter((o) -> o.torridonian),
+		Terrain.CODEC.fieldOf("mountains").forGetter((o) -> o.mountains),
+		Terrain.CODEC.fieldOf("volcano").forGetter((o) -> o.volcano)		
+	).apply(instance, TerrainSettings::new));
+	
+    public General general;
+    public Terrain steppe;
+    public Terrain plains;
+    public Terrain hills;
+    public Terrain dales;
+    public Terrain plateau;
+    public Terrain badlands;
+    public Terrain torridonian;
+    public Terrain mountains;
+    public Terrain volcano;
+    
+    public TerrainSettings(General general, Terrain steppe, Terrain plains, Terrain hills, Terrain dales, Terrain plateau, Terrain badlands, Terrain torridonian, Terrain mountains, Terrain volcano) {
+    	this.general = general;
+    	this.steppe = steppe;
+    	this.plains = plains;
+    	this.hills = hills;
+    	this.dales = dales;
+    	this.plateau = plateau;
+    	this.badlands = badlands;
+    	this.torridonian = torridonian;
+    	this.mountains = mountains;
+    	this.volcano = volcano;
+    }
+    
+    public TerrainSettings copy() {
+    	return new TerrainSettings(this.general.copy(), this.steppe.copy(), this.plains.copy(), this.hills.copy(), this.dales.copy(), this.plateau.copy(), this.badlands.copy(), this.torridonian.copy(), this.mountains.copy(), this.volcano.copy());
+    }
+    
+    public static class General {
+    	public static final Codec<General> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    		Codec.INT.fieldOf("terrainSeedOffset").forGetter((o) -> o.terrainSeedOffset),
+    		Codec.INT.fieldOf("terrainRegionSize").forGetter((o) -> o.terrainRegionSize),
+    		Codec.FLOAT.fieldOf("globalVerticalScale").forGetter((o) -> o.globalVerticalScale),
+    		Codec.FLOAT.fieldOf("globalHorizontalScale").forGetter((o) -> o.globalHorizontalScale),
+    		Codec.BOOL.fieldOf("fancyMountains").forGetter((o) -> o.fancyMountains)
+    	).apply(instance, General::new));
+    	
+        public int terrainSeedOffset;
+        public int terrainRegionSize;
+        public float globalVerticalScale;
+        public float globalHorizontalScale;
+        public boolean fancyMountains;
+        public boolean legacyMountainScaling;
+        
+        public General(int terrainSeedOffset, int terrainRegionSize, float globalVerticalScale, float globalHorizontalScale, boolean fancyMountains) {
+        	this.terrainSeedOffset = terrainSeedOffset;
+        	this.terrainRegionSize = terrainRegionSize;
+        	this.globalVerticalScale = globalVerticalScale;
+        	this.globalHorizontalScale = globalHorizontalScale;
+        	this.fancyMountains = fancyMountains;
+        }
+        
+        public General copy() {
+        	return new General(this.terrainSeedOffset, this.terrainRegionSize, this.globalVerticalScale, this.globalHorizontalScale, this.fancyMountains);
+        }
+    }
+    
+    public static class Terrain {
+    	public static final Codec<Terrain> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    		Codec.FLOAT.fieldOf("weight").forGetter((o) -> o.weight),
+    		Codec.FLOAT.fieldOf("baseScale").forGetter((o) -> o.baseScale),
+    		Codec.FLOAT.fieldOf("verticalScale").forGetter((o) -> o.verticalScale),
+    		Codec.FLOAT.fieldOf("horizontalScale").forGetter((o) -> o.horizontalScale)
+    	).apply(instance, Terrain::new));
+    	
+        public float weight;
+        public float baseScale;
+        public float verticalScale;
+        public float horizontalScale;
+        
+        public Terrain(float weight, float baseScale, float verticalScale, float horizontalScale) {
+            this.weight = weight;
+            this.baseScale = baseScale;
+            this.verticalScale = verticalScale;
+            this.horizontalScale = horizontalScale;
+        }
+        
+        public Terrain copy() {
+        	return new Terrain(this.weight, this.baseScale, this.verticalScale, this.horizontalScale);
+        }
+    }
+}
+
+====Presets====
+package com.regenerationforrged.data.worldgen.preset.settings;
+
+import com.regenerationforrged.data.worldgen.preset.settings.ClimateSettings.BiomeNoise;
+import com.regenerationforrged.data.worldgen.preset.settings.ClimateSettings.BiomeShape;
+import com.regenerationforrged.data.worldgen.preset.settings.ClimateSettings.RangeValue;
+import com.regenerationforrged.data.worldgen.preset.settings.FilterSettings.Erosion;
+import com.regenerationforrged.data.worldgen.preset.settings.FilterSettings.Smoothing;
+import com.regenerationforrged.data.worldgen.preset.settings.RiverSettings.Lake;
+import com.regenerationforrged.data.worldgen.preset.settings.RiverSettings.River;
+import com.regenerationforrged.data.worldgen.preset.settings.RiverSettings.Wetland;
+import com.regenerationforrged.data.worldgen.preset.settings.TerrainSettings.General;
+import com.regenerationforrged.data.worldgen.preset.settings.TerrainSettings.Terrain;
+import com.regenerationforrged.data.worldgen.preset.settings.WorldSettings.Continent;
+import com.regenerationforrged.data.worldgen.preset.settings.WorldSettings.ControlPoints;
+import com.regenerationforrged.data.worldgen.preset.settings.WorldSettings.Properties;
+import com.regenerationforrged.world.worldgen.cell.continent.MushroomIslandPopulator;
+import com.regenerationforrged.world.worldgen.noise.function.DistanceFunction;
+
+public class Presets {
+
+	public static Preset makeLegacyDefault() {
+		return new Preset(
+			new WorldSettings(
+				new Continent(ContinentType.MULTI_IMPROVED, DistanceFunction.EUCLIDEAN, 3000, 0.7F, 0.25F, 0.25F, 5, 0.26F, 4.33F),
+				new ControlPoints(MushroomIslandPopulator.DEFAULT_INLAND_POINT, MushroomIslandPopulator.DEFAULT_COAST_POINT, 0.1F, 0.25F, 0.327F, 0.448F, 0.502F), 
+				new Properties(SpawnType.CONTINENT_CENTER, 320, 64, 63, -54)
+			), 
+			new CaveSettings(0.0F, 2.5625F, 1.0F, 1.0F, 1.0F, 0.14285715F, 0.07F, 0.02F, true, false),
+			new ClimateSettings(
+				new RangeValue(0, 6, 2, 0.0F, 0.98F, 0.05F), 
+				new RangeValue(0, 6, 1, 0.0F, 1.0F, 0.0F), 
+				new BiomeShape(250, 8, 170, 90),
+				new BiomeNoise(ClimateSettings.BiomeNoise.EdgeType.SIMPLEX, 24, 2, 0.5F, 2.65F, 14)
+			), 
+			new TerrainSettings(
+				new General(0, 1200, 0.98F, 1.0F, true),
+				new Terrain(1.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F),
+				new Terrain(1.5F, 1.0F, 1.0F, 1.0F),
+				new Terrain(1.5F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(1.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.5F, 1.0F, 1.0F, 1.0F),
+				new Terrain(5.0F, 1.0F, 1.0F, 1.0F)
+		    ), 
+			new RiverSettings(
+				0, 8, 
+				new River(5, 2, 6, 20, 8, 0.9F),
+				new River(4, 1, 4, 14, 5, 0.975F), 
+				new Lake(0.3F, 0.0F, 0.05F, 10, 75, 150, 2, 10),
+				new Wetland(0.6F, 175, 225)
+			), 
+			new FilterSettings(
+				new Erosion(135, 12, 0.7F, 0.7F, 0.5F, 0.5F),
+				new Smoothing(1, 1.8F, 0.9F)
+			), 
+			new StructureSettings(),
+			new MiscellaneousSettings(true, 600, true, true, true, false, true, true, true, true, true, 0.4F, 0.4F)
+		); 
+	}
+	
+	public static Preset makeLegacyVanillaish() {
+		return new Preset(
+			new WorldSettings(
+				new Continent(ContinentType.MULTI, DistanceFunction.EUCLIDEAN, 2000, 0.763F, 0.25F, 0.25F, 5, 0.26F, 4.33F),
+				new ControlPoints(MushroomIslandPopulator.DEFAULT_INLAND_POINT, MushroomIslandPopulator.DEFAULT_COAST_POINT, 0.1F, 0.25F, 0.326F, 0.448F, 0.5F), 
+				new Properties(SpawnType.WORLD_ORIGIN, 320, 64, 63, -54)
+			), 
+			new CaveSettings(1.0F, 1.5625F, 1.0F, 1.0F, 1.0F, 0.15F, 0.07F, 0.021F, true, false),
+			new ClimateSettings(
+				new RangeValue(0, 4, 1, 0.0F, 0.98F, 0.05F), 
+				new RangeValue(0, 5, 1, 0.0F, 1.0F, 0.0F), 
+				new BiomeShape(176, 6, 150, 80),
+				new BiomeNoise(ClimateSettings.BiomeNoise.EdgeType.SIMPLEX, 24, 2, 0.5F, 2.65F, 14)
+			), 
+			new TerrainSettings(
+				new General(0, 690, 0.629F, 0.629F, false),
+				new Terrain(1.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(1.25F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.5F, 1.0F, 1.0F, 1.0F),
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F),
+				new Terrain(2.5F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(1.5F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(3.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(3.5F, 1.0F, 1.0F, 1.0F),
+				new Terrain(6.0F, 1.0F, 1.0F, 1.0F)
+			), 
+			new RiverSettings(
+				0, 11, 
+				new River(5, 2, 6, 20, 8, 0.507F),
+				new River(4, 1, 4, 14, 5, 0.493F), 
+				new Lake(0.462F, 0.0F, 0.028F, 10, 75, 150, 2, 10),
+				new Wetland(0.796F, 196, 255)
+			), 
+			new FilterSettings(
+				new Erosion(100, 12, 0.699F, 0.699F, 0.5F, 0.5F),
+				new Smoothing(2, 1.8F, 0.75F)
+			), 
+			new StructureSettings(),
+			new MiscellaneousSettings(false, 600, false, true, false, false, false, false, true, true, true, 1.0F, 0.75F)
+		); 
+	}
+	
+	//TODO make mushroom islands bigger
+	public static Preset makeLegacyBeautiful() {
+		return new Preset(
+			new WorldSettings(
+				new Continent(ContinentType.MULTI, DistanceFunction.EUCLIDEAN, 3000, 0.8F, 0.25F, 0.25F, 5, 0.26F, 4.33F),
+				new ControlPoints(MushroomIslandPopulator.DEFAULT_INLAND_POINT, MushroomIslandPopulator.DEFAULT_COAST_POINT, 0.1F, 0.25F, 0.326F, 0.448F, 0.5F), 
+				new Properties(SpawnType.CONTINENT_CENTER, 320, 64, 63, -54)
+			), 
+			new CaveSettings(0.0F, 1.5625F, 1.0F, 1.0F, 1.0F, 0.14285715F, 0.07F, 0.02F, true, false),
+			new ClimateSettings(
+				new RangeValue(0, 7, 1, 0.0F, 1.0F, -0.004F), 
+				new RangeValue(0, 6, 1, 0.0F, 1.0F, 0.0F), 
+				new BiomeShape(185, 8, 150, 80),
+				new BiomeNoise(ClimateSettings.BiomeNoise.EdgeType.SIMPLEX, 24, 2, 0.5F, 2.65F, 14)
+			), 
+			new TerrainSettings(
+				new General(0, 1356, 1.0F, 1.175F, true),
+				new Terrain(1.519F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.164F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.706F, 1.0F, 1.0F, 1.0F),
+				new Terrain(1.184F, 1.0F, 1.0F, 1.0F),
+				new Terrain(2.576F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(1.493F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(3.555F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.911F, 1.0F, 1.0F, 1.0F),
+				new Terrain(7.5F, 1.0F, 1.0F, 1.0F)
+			), 
+			new RiverSettings(
+				0, 14, 
+				new River(5, 1, 4, 20, 5, 0.504F),
+				new River(3, 1, 2, 12, 4, 0.5F), 
+				new Lake(0.671F, 0.0F, 0.028F, 8, 75, 150, 2, 7),
+				new Wetland(0.865F, 134, 201)
+			), 
+			new FilterSettings(
+				new Erosion(175, 12, 0.648F, 0.657F, 0.5F, 0.5F),
+				new Smoothing(1, 1.855F, 0.916F)
+			), 
+			new StructureSettings(),
+			new MiscellaneousSettings(true, 684, true, true, true, false, true, true, true, true, false, 0.853F, 0.855F)
+		); 
+	}
+	
+	public static Preset makeLegacyLite() {
+		return new Preset(
+			new WorldSettings(
+				new Continent(ContinentType.MULTI, DistanceFunction.EUCLIDEAN, 2000, 0.765F, 0.25F, 0.25F, 5, 0.26F, 4.33F),
+				new ControlPoints(-1.0F, -1.0F, 0.1F, 0.25F, 0.326F, 0.448F, 0.5F), 
+				new Properties(SpawnType.CONTINENT_CENTER, 320, 64, 63, -54)
+			),
+			new CaveSettings(0.0F, 1.5625F, 1.0F, 1.0F, 1.0F, 0.14285715F, 0.07F, 0.02F, false, false),
+			new ClimateSettings(
+				new RangeValue(0, 4, 1, 0.0F, 0.98F, 0.05F),
+				new RangeValue(0, 5, 1, 0.0F, 1.0F, 0.0F), 
+				new BiomeShape(176, 6, 150, 80),
+				new BiomeNoise(ClimateSettings.BiomeNoise.EdgeType.SIMPLEX, 24, 2, 0.5F, 2.65F, 14)
+			), 
+			new TerrainSettings(
+				new General(0, 690, 0.629F, 0.629F, false),
+				new Terrain(1.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(1.25F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.5F, 1.0F, 1.0F, 1.0F),
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F),
+				new Terrain(2.5F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(1.5F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(3.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(3.5F, 1.0F, 1.0F, 1.0F),
+				new Terrain(6.0F, 1.0F, 1.0F, 1.0F)
+			), 
+			new RiverSettings(
+				0, 11, 
+				new River(5, 2, 6, 20, 8, 0.507F),
+				new River(4, 1, 4, 14, 5, 0.493F), 
+				new Lake(0.462F, 0.0F, 0.028F, 10, 75, 150, 2, 10),
+				new Wetland(0.796F, 196, 255)
+			), 
+			new FilterSettings(
+				new Erosion(100, 12, 0.699F, 0.699F, 0.5F, 0.5F),
+				new Smoothing(2, 1.799F, 0.75F)
+			), 
+			new StructureSettings(),
+			new MiscellaneousSettings(true, 600, false, true, true, false, true, true, true, true, true, 1.0F, 0.75F)
+		);
+	}
+	
+	public static Preset makeLegacyHugeBiomes() {
+		return new Preset(
+			new WorldSettings(
+				new Continent(ContinentType.MULTI, DistanceFunction.EUCLIDEAN, 4029, 0.8F, 0.25F, 0.25F, 5, 0.26F, 4.33F),
+				new ControlPoints(-1.0F, -1.0F, 0.1F, 0.25F, 0.326F, 0.448F, 0.5F), 
+				new Properties(SpawnType.CONTINENT_CENTER, 320, 64, 63, -54)
+			), 
+			new CaveSettings(0.0F, 1.5625F, 1.0F, 1.0F, 1.0F, 0.14285715F, 0.07F, 0.02F, true, false),
+			new ClimateSettings(
+				new RangeValue(0, 4, 2, 0.0F, 1.0F, 0.097F), 
+				new RangeValue(0, 3, 1, 0.0F, 1.0F, 0.0F), 
+				new BiomeShape(402, 5, 180, 110),
+				new BiomeNoise(ClimateSettings.BiomeNoise.EdgeType.PERLIN2, 24, 1, 0.5F, 2.65F, 60)
+			), 
+			new TerrainSettings(
+				new General(0, 1507, 1.0F, 1.175F, true),
+				new Terrain(1.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F),
+				new Terrain(1.5F, 1.0F, 1.0F, 1.0F),
+				new Terrain(1.5F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(1.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.5F, 1.0F, 1.0F, 1.0F),
+				new Terrain(5.0F, 1.0F, 1.0F, 1.0F)
+			), 
+			new RiverSettings(
+				0, 13, 
+				new River(5, 1, 5, 28, 9, 0.27F),
+				new River(3, 1, 3, 18, 3, 0.7F), 
+				new Lake(0.595F, 0.0F, 0.028F, 10, 75, 150, 2, 10),
+				new Wetland(0.86F, 175, 225)
+			), 
+			new FilterSettings(
+				new Erosion(165, 15, 0.612F, 0.652F, 0.5F, 0.5F),
+				new Smoothing(1, 1.799F, 0.898F)
+			), 
+			new StructureSettings(),
+			new MiscellaneousSettings(true, 721, true, true, true, false, true, true, true, true, false, 0.902F, 0.945F)
+		);
+	}
+	
+	//TODO
+	public static Preset makeRTFDefault() {
+		return new Preset(
+			new WorldSettings(
+				new Continent(ContinentType.MULTI_IMPROVED, DistanceFunction.EUCLIDEAN, 3000, 0.7F, 0.25F, 0.25F, 5, 0.26F, 4.33F),
+				new ControlPoints(MushroomIslandPopulator.DEFAULT_INLAND_POINT, MushroomIslandPopulator.DEFAULT_COAST_POINT, 0.1F, 0.25F, 0.327F, 0.448F, 0.502F), 
+				new Properties(SpawnType.CONTINENT_CENTER, 320, 64, 63, -54)
+			), 
+			new CaveSettings(0.0F, 1.5625F, 1.0F, 1.0F, 1.0F, 0.14285715F, 0.07F, 0.01F, true, true),
+			new ClimateSettings(
+				new RangeValue(0, 6, 2, 0.0F, 0.98F, 0.05F), 
+				new RangeValue(0, 6, 1, 0.0F, 1.0F, 0.0F), 
+				new BiomeShape(225, 8, 150, 80),
+				new BiomeNoise(ClimateSettings.BiomeNoise.EdgeType.SIMPLEX, 24, 2, 0.5F, 2.65F, 14)
+			), 
+			new TerrainSettings(
+				new General(0, 1200, 0.98F, 1.0F, true),
+				new Terrain(1.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F),
+				new Terrain(1.5F, 1.0F, 1.0F, 1.0F),
+				new Terrain(1.5F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(1.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.0F, 1.0F, 1.0F, 1.0F), 
+				new Terrain(2.5F, 1.0F, 1.0F, 1.0F),
+				new Terrain(5.0F, 1.0F, 1.0F, 1.0F)
+			), 
+			new RiverSettings(
+				0, 8, 
+				new River(5, 2, 6, 20, 8, 0.75F),
+				new River(4, 1, 4, 14, 5, 0.975F), 
+				new Lake(0.3F, 0.0F, 0.03F, 10, 75, 150, 2, 10),
+				new Wetland(0.6F, 175, 225)
+			), 
+			new FilterSettings(
+				new Erosion(135, 12, 0.7F, 0.7F, 0.5F, 0.5F),
+				new Smoothing(1, 1.8F, 0.9F)
+			), 
+			new StructureSettings(),
+			new MiscellaneousSettings(true, 600, true, true, true, false, true, true, true, true, true, 0.4F, 0.4F)
+		); 
+	}
+	
+	public static Preset makeLegacy1_18() {
+		throw new UnsupportedOperationException("TODO");
+	}
+}
